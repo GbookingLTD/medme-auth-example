@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Hello</title>
+</head>
+
+<body>
+
+</body>
+<script>
+    // We can get the token from the "access_token" query
+    // param, available in the browsers "location" global
+    const query = window.location.search.substring(1)
+    const token = query.split('token=')[1]
+    const user = query.split('user=')[1]
+
+    let requestCounter = 1;
+
+    // Call the user info API using the fetch browser library
+    fetch('//apiv2.gbooking.ru/rpc', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            jsonrpc:"2.0",
+            id: requestCounter++,
+            cred: {user, token},
+            method: "profile.get_profile",
+            params: {}
+        })
+    })
+        // Parse the response as JSON
+        .then(res => res.json())
+        .then(res => {
+            // Write "Welcome <user name>" to the documents body
+            const nameNode = document.createTextNode(`Welcome, ${res.name}`)
+            document.body.appendChild(nameNode)
+        })
+</script>
+
+</html>
