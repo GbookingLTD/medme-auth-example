@@ -9,37 +9,140 @@
 </head>
 
 <body>
-
+<a href="logout.html">Logout</a>
+<a href="refresh.html">Refresh token</a>
 </body>
 <script>
     const CLIENT_ID = '5e4bd655a719ad41e8bcbf79';
 
-    // We can get the token from the "access_token" query
-    // param, available in the browsers "location" global
-    const query = window.location.search.substring(1)
-    const code = query.split('code=')[1]
+    function authorize() {
+        // We can get the token from the "code" query
+        // param, available in the browsers "location" global
+        const query = window.location.search.substring(1)
+        const code = query.split('code=')[1]
+
+        const waitUntilRedirect = new Promise(() => {});
+
+        // Call exchange token phase when "code" query is passed.
+        if (code)
+            return exchangeToken(code)
+                .then(cred => {
+                    // Save session object to localStorage or cookies.
+                    // Remove "code" query from current URL
+                    // for avoid call exchange token phase on reload this page.
+                    // It should redirect page and this function will goes by another "if" branch (see below).
+                    localStorage.cred = JSON.stringify(cred);
+                    location.href = '/welcome.html';
+                    return waitUntilRedirect;
+                });
+
+        if (!localStorage.cred) {
+            // User go to login form when local session object not found
+            loginForm();
+            return waitUntilRedirect;
+        }
+
+        let cred = JSON.parse(localStorage.cred);
+        let isValidCred = cred && cred.user && cred.token && cred.refreshToken;
+        if (!isValidCred) {
+            // User go to login form when local session object corrupted
+            // throw Error('Expect valid session');
+            loginForm();
+            return waitUntilRedirect;
+        }
+
+        // Here checking if session not expired.
+        return authorizeInfo(cred.token)
+            .then(isAuthorized => {
+                if (isAuthorized) return;
+
+                // When session expired send refresh token request.
+                // If refresh token was expired redirect user to login form.
+                return refreshToken(cred.token, cred.refreshToken)
+                    .then(tokenRefreshed => {
+                        if (!tokenRefreshed) {
+                            // Refresh token was expired so user should fill login form again
+                            loginForm();
+                            return waitUntilRedirect;
+                        }
+                    })
+            });
+    }
+
+    authorize()
+        .then(() => {
+            const cred = JSON.parse(localStorage.cred);
+            return printUser(cred.user, cred.token);
+        });
 
     let requestCounter = 1;
 
-    fetch('https://oauthv2.gbooking.ru/exchange', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            code,
-            client_id: CLIENT_ID,
-            redirect_uri: 'http://gbooking.local/welcome.html'
+    function exchangeToken(code) {
+        return fetch('https://oauthv2.gbooking.ru/exchange', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                code,
+                client_id: CLIENT_ID,
+                redirect_uri: 'http://gbooking.local/welcome.html'
+            })
         })
-    })
-        // Parse the response as JSON
-        .then(res => res.json())
-        .then(res =>
-            printUser(res.user, res.token));
+            // Parse the response as JSON
+            .then(res => res.json())
+    }
+
+    function authorizeInfo(token) {
+        return fetch('https://oauthv2.gbooking.ru/authorize/info?token='+token)
+            // Parse the response as JSON
+            .then(res => res.json())
+            // User is authorized when there is user_id property in the response
+            .then(res => !!res.user_id)
+    }
+
+    function refreshToken(token, refresh) {
+        return fetch('https://oauthv2.gbooking.ru/refresh', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                token,
+                refresh
+            })
+        })
+            // Parse the response as JSON
+            .then(res => res.status !== 200 ?
+                res.text().then(text => ({code: res.status, error: text})) :
+                res.json())
+            // User is authorized when there is user_id property in the response
+            .then(res => {
+                if (res && res.error) {
+                    console.error('refresh token', res.error);
+                    return false;
+                }
+
+                if (!res || !res.refresh_token)
+                    return false;
+
+                const cred = JSON.parse(localStorage.cred);
+                cred.token = res.access_token;
+                cred.refreshToken = res.refresh_token;
+                localStorage.cred = JSON.stringify(cred);
+                return true;
+            })
+    }
+
+    function loginForm() {
+        // Here you may want to go to "authorize" URI.
+        // It can initiate circular redirection if something will wrong and when it will load user system.
+        location.href = '/';
+    }
 
     function printUser(user, token) {
         // Call the user info API using the fetch browser library
-        fetch('https://apiv2.gbooking.ru/rpc', {
+        return fetch('https://apiv2.gbooking.ru/rpc', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -62,6 +165,7 @@
                 document.body.appendChild(nameNode)
             });
     }
+
 </script>
 
 </html>

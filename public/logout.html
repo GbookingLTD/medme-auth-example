@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Good bye!</title>
+</head>
+<body>
+</body>
+<script>
+    const CLIENT_ID = '5e4bd655a719ad41e8bcbf79';
+
+    let cred=  JSON.parse(localStorage.cred);
+    fetch('https://oauthv2.gbooking.ru/logout', {
+        method: 'POST',
+        body: JSON.stringify({
+            client_id: CLIENT_ID,
+            userid: cred.user,
+            token: cred.token
+        })
+    })
+        .then(() => {
+            delete localStorage.cred;
+        })
+        // Trying to call api with old credentials
+        .then(() => tryingGetProfile(cred.user, cred.token));
+
+    let requestCounter = 1;
+
+    function tryingGetProfile(user, token) {
+        return fetch('https://apiv2.gbooking.ru/rpc', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                jsonrpc: "2.0",
+                id: requestCounter++,
+                cred: {user, token},
+                method: "profile.get_profile",
+                params: {
+                    id: user
+                }
+            })
+        })
+            // Parse the response as JSON
+            .then(res => res.json())
+            .then(res => {
+                if (!res.result) {
+                    const errNode = document.createTextNode('Success logout! Profile is not available.');
+                    return document.body.appendChild(errNode);
+                }
+
+                const nameNode = document.createTextNode(`Wrong logout! Has access to ${res.result.profile.name} profile!`)
+                document.body.appendChild(nameNode)
+            });
+    }
+</script>
+</html>

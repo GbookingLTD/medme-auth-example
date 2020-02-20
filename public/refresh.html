@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Refresh token</title>
+</head>
+<body>
+<p id="success_info" style="display: none">
+    Token was refreshed successfully!
+    You can go to <a href="welcome.html">welcome.html</a>.
+</p>
+</body>
+<script>
+    const CLIENT_ID = '5e4bd655a719ad41e8bcbf79';
+
+    main();
+
+    function main() {
+        const waitUntilRedirect = new Promise(() => {});
+
+        if (!localStorage.cred) {
+            // User go to login form when local session object not found
+            loginForm();
+            return waitUntilRedirect;
+        }
+
+        let cred = JSON.parse(localStorage.cred);
+        let isValidCred = cred && cred.user && cred.token && cred.refreshToken;
+        if (!isValidCred) {
+            // User go to login form when local session object corrupted
+            // throw Error('Expect valid session');
+            loginForm();
+            return waitUntilRedirect;
+        }
+
+        return refreshToken(cred.token, cred.refreshToken)
+            .then(tokenRefreshed => {
+                if (!tokenRefreshed) {
+                    // Refresh token was expired so user should fill login form again
+                    loginForm();
+                    return waitUntilRedirect;
+                }
+
+                document.getElementById('success_info').style.display='block';
+            })
+    }
+
+    function loginForm() {
+        // Here you may want to go to "authorize" URI.
+        // It can initiate circular redirection if something will wrong and when it will load user system.
+        location.href = '/';
+    }
+
+    function refreshToken(token, refresh) {
+        return fetch('https://oauthv2.gbooking.ru/refresh', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                token,
+                refresh
+            })
+        })
+            // Parse the response as JSON
+            .then(res => res.status !== 200 ?
+                res.text().then(text => ({code: res.status, error: text})) :
+                res.json())
+            // User is authorized when there is user_id property in the response
+            .then(res => {
+                if (res && res.error) {
+                    console.error('refresh token', res.error);
+                    return false;
+                }
+
+                if (!res || !res.refresh_token)
+                    return false;
+
+                const cred = JSON.parse(localStorage.cred);
+                cred.token = res.access_token;
+                cred.refreshToken = res.refresh_token;
+                localStorage.cred = JSON.stringify(cred);
+                return true;
+            })
+    }
+
+</script>
+</html>
