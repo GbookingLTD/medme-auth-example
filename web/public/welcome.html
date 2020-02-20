@@ -11,6 +11,7 @@
 <body>
 <a href="logout.html">Logout</a>
 <a href="refresh.html">Refresh token</a>
+<p id="error_message"></p>
 </body>
 <script>
     const CLIENT_ID = '5e4bd655a719ad41e8bcbf79';
@@ -52,9 +53,10 @@
         }
 
         // Here checking if session not expired.
-        return authorizeInfo(cred.token)
-            .then(isAuthorized => {
-                if (isAuthorized) return;
+        return profile(cred.user, cred.token)
+            .then(res => {
+                const isAuthorized = res && res.result;
+                if (isAuthorized) return res;
 
                 // When session expired send refresh token request.
                 // If refresh token was expired redirect user to login form.
@@ -65,14 +67,29 @@
                             loginForm();
                             return waitUntilRedirect;
                         }
-                    })
+
+                        return null;
+                    });
             });
     }
 
     authorize()
-        .then(() => {
-            const cred = JSON.parse(localStorage.cred);
-            return printUser(cred.user, cred.token);
+        .then(res => {
+            if (res)
+                return res;
+
+            // Check if session is OK
+
+            let cred = JSON.parse(localStorage.cred);
+            return profile(cred.user, cred.token);
+        })
+        .then(res => {
+            if (!res || res.error)
+                return handleResponseError(res);
+
+            // Write "Welcome <user name>" to the documents body
+            const nameNode = document.createTextNode(`Welcome, ${res.result.profile.name}`);
+            document.body.appendChild(nameNode);
         });
 
     let requestCounter = 1;
@@ -93,12 +110,40 @@
             .then(res => res.json())
     }
 
-    function authorizeInfo(token) {
-        return fetch('https://oauthv2.gbooking.ru/authorize/info?token='+token)
+    function handleResponseError(res) {
+        if (tokenWasExpiredResponseError(res)) {
+            // Here you can call refreshToken for hiding from user refresh phase
+            // See authorize function above.
+            document.getElementById('error_message').innerHTML = 'Session was expired. Please, <a href=".">reload</a> the page';
+            return;
+        }
+
+        console.error('Wrong request', res);
+        document.getElementById('error_message').innerHTML = 'Wrong request. Please, see console for details';
+    }
+
+    function tokenWasExpiredResponseError(res) {
+        return res && res.error && res.error.code === -18007;
+    }
+
+    function profile(user, token) {
+        return fetch('https://apiv2.gbooking.ru/rpc', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                jsonrpc: "2.0",
+                id: requestCounter++,
+                cred: {user, token},
+                method: "profile.get_profile",
+                params: {
+                    id: user
+                }
+            })
+        })
             // Parse the response as JSON
             .then(res => res.json())
-            // User is authorized when there is user_id property in the response
-            .then(res => !!res.user_id)
     }
 
     function refreshToken(token, refresh) {
@@ -138,32 +183,6 @@
         // Here you may want to go to "authorize" URI.
         // It can initiate circular redirection if something will wrong and when it will load user system.
         location.href = '/';
-    }
-
-    function printUser(user, token) {
-        // Call the user info API using the fetch browser library
-        return fetch('https://apiv2.gbooking.ru/rpc', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                jsonrpc: "2.0",
-                id: requestCounter++,
-                cred: {user, token},
-                method: "profile.get_profile",
-                params: {
-                    id: user
-                }
-            })
-        })
-            // Parse the response as JSON
-            .then(res => res.json())
-            .then(res => {
-                // Write "Welcome <user name>" to the documents body
-                const nameNode = document.createTextNode(`Welcome, ${res.result.profile.name}`)
-                document.body.appendChild(nameNode)
-            });
     }
 
 </script>
