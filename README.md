@@ -7,9 +7,10 @@ This is my start point.
 
 For running you need to add domain `gbooking.local` to your local `hosts` file and run static server that listen `public` folder.
 It will listen 80 port.
-For multiplatform support I added simplest nodejs static server. You can run it so:
 
 `gbooking.local` domain on `80` port needs for CORS policy on GBooking OAuth 2 server.
+
+For multiplatform support I added simplest nodejs static server. You can run it so:
 
 ````
 sudo node server.js
