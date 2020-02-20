@@ -55,38 +55,30 @@
         // Here checking if session not expired.
         return profile(cred.user, cred.token)
             .then(res => {
-                const isAuthorized = res && res.result;
-                if (isAuthorized) return res;
+                if (res && res.result)
+                    return res;
 
-                // When session expired send refresh token request.
-                // If refresh token was expired redirect user to login form.
-                return refreshToken(cred.token, cred.refreshToken)
-                    .then(tokenRefreshed => {
-                        if (!tokenRefreshed) {
-                            // Refresh token was expired so user should fill login form again
-                            loginForm();
-                            return waitUntilRedirect;
-                        }
+                if (tokenWasExpiredResponseError(res)) {
+                    // When session expired send refresh token request.
+                    // If refresh token was expired redirect user to login form.
+                    return refreshToken(cred.token, cred.refreshToken)
+                        .then(tokenRefreshed => {
+                            if (!tokenRefreshed) {
+                                // Refresh token was expired so user should fill login form again
+                                loginForm();
+                                return waitUntilRedirect;
+                            }
 
-                        return null;
-                    });
+                            return null;
+                        });
+                }
+
+                return null;
             });
     }
 
     authorize()
         .then(res => {
-            if (res)
-                return res;
-
-            // Check if session is OK
-
-            let cred = JSON.parse(localStorage.cred);
-            return profile(cred.user, cred.token);
-        })
-        .then(res => {
-            if (!res || res.error)
-                return handleResponseError(res);
-
             // Write "Welcome <user name>" to the documents body
             const nameNode = document.createTextNode(`Welcome, ${res.result.profile.name}`);
             document.body.appendChild(nameNode);
