@@ -11,7 +11,6 @@
 <body>
 <a href="logout.html">Logout</a>
 <a href="refresh.html">Refresh token</a>
-<p id="error_message"></p>
 </body>
 <script>
     const CLIENT_ID = '5e4bd655a719ad41e8bcbf79';
@@ -100,18 +99,6 @@
         })
             // Parse the response as JSON
             .then(res => res.json())
-    }
-
-    function handleResponseError(res) {
-        if (tokenWasExpiredResponseError(res)) {
-            // Here you can call refreshToken for hiding from user refresh phase
-            // See authorize function above.
-            document.getElementById('error_message').innerHTML = 'Session was expired. Please, <a href=".">reload</a> the page';
-            return;
-        }
-
-        console.error('Wrong request', res);
-        document.getElementById('error_message').innerHTML = 'Wrong request. Please, see console for details';
     }
 
     function tokenWasExpiredResponseError(res) {
