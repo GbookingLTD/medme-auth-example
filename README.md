@@ -5,7 +5,7 @@ This is my start point.
 
 Please if you will use this code in production use polyfill for [fetch API](https://developer.mozilla.org/ru/docs/Web/API/Fetch_API) – [Fetch API polyfill](https://github.com/github/fetch).
 
-## USAGE
+## USAGE WEB EXAMPLE
 
 For running you need to add domain `gbooking.local` to your local `hosts` file and run static server that listen `public` folder.
 It will listen 80 port.
@@ -16,7 +16,9 @@ For multiplatform support I added simplest nodejs static server. You can run it 
 
 ````
 npm install express
-sudo node server.js
+sudo node web/server.js
 ````
 
 Here need `sudo` because 80 port.
+
+## USAGE MOBILE EXAMPLE
