@@ -45,8 +45,8 @@
         }
 
         let cred = JSON.parse(localStorage.cred);
-        let isValidCred = cred && cred.user && cred.token && cred.refreshToken;
-        if (!isValidCred) {
+        let credIsCorrupted = cred && cred.user && cred.token && cred.refreshToken;
+        if (!credIsCorrupted) {
             // User go to login form when local session object corrupted
             // throw Error('Expect valid session');
             loginForm();
