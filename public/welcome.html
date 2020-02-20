@@ -12,35 +12,56 @@
 
 </body>
 <script>
+    const CLIENT_ID = '5e4bd655a719ad41e8bcbf79';
+
     // We can get the token from the "access_token" query
     // param, available in the browsers "location" global
     const query = window.location.search.substring(1)
-    const token = query.split('token=')[1]
-    const user = query.split('user=')[1]
+    const code = query.split('code=')[1]
 
     let requestCounter = 1;
 
-    // Call the user info API using the fetch browser library
-    fetch('//apiv2.gbooking.ru/rpc', {
+    fetch('https://oauthv2.gbooking.ru/exchange', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-            jsonrpc:"2.0",
-            id: requestCounter++,
-            cred: {user, token},
-            method: "profile.get_profile",
-            params: {}
+            code,
+            client_id: CLIENT_ID,
+            redirect_uri: 'http://gbooking.local/welcome.html'
         })
     })
         // Parse the response as JSON
         .then(res => res.json())
-        .then(res => {
-            // Write "Welcome <user name>" to the documents body
-            const nameNode = document.createTextNode(`Welcome, ${res.name}`)
-            document.body.appendChild(nameNode)
+        .then(res =>
+            printUser(res.user, res.token));
+
+    function printUser(user, token) {
+        // Call the user info API using the fetch browser library
+        fetch('https://apiv2.gbooking.ru/rpc', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                jsonrpc: "2.0",
+                id: requestCounter++,
+                cred: {user, token},
+                method: "profile.get_profile",
+                params: {
+                    id: user
+                }
+            })
         })
+            // Parse the response as JSON
+            .then(res => res.json())
+            .then(res => {
+                // Write "Welcome <user name>" to the documents body
+                const nameNode = document.createTextNode(`Welcome, ${res.result.profile.name}`)
+                document.body.appendChild(nameNode)
+            });
+    }
 </script>
 
 </html>
