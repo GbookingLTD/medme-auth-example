@@ -1,4 +1,4 @@
-# Test MedMe OAuth 2 Application
+# MedMe OAuth 2 Example
 
 See [this origin article](https://www.sohamkamani.com/blog/javascript/2018-06-24-oauth-with-node-js/).
 This is my start point.
