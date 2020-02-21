@@ -3,7 +3,7 @@
 See [this origin article](https://www.sohamkamani.com/blog/javascript/2018-06-24-oauth-with-node-js/).
 This is my start point.
 
-Also good point for understanding of [OAuth mechanism](https://itnext.io/an-oauth-2-0-introduction-for-beginners-6e386b19f7a9).
+Also good point for understanding of [OAuth 2 mechanism](https://itnext.io/an-oauth-2-0-introduction-for-beginners-6e386b19f7a9).
 
 Please if you will use this code in production use polyfill for [fetch API](https://developer.mozilla.org/ru/docs/Web/API/Fetch_API) – [Fetch API polyfill](https://github.com/github/fetch).
 

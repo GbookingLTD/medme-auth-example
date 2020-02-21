@@ -11,6 +11,8 @@
 <script>
     const CLIENT_ID = '5e4bd655a719ad41e8bcbf79';
 
+    let requestCounter = 1;
+
     let cred=  JSON.parse(localStorage.cred);
     fetch('https://oauthv2.gbooking.ru/logout', {
         method: 'POST',
@@ -24,37 +26,35 @@
             delete localStorage.cred;
         })
         // Trying to call api with old credentials
-        .then(() => tryingGetProfile(cred.user, cred.token));
+        .then(() => profile(cred.user, cred.token))
+        .then(res => {
+            if (!res.result) {
+                const errNode = document.createTextNode('Success logout! Profile is not available.');
+                return document.body.appendChild(errNode);
+            }
 
-    let requestCounter = 1;
+            const nameNode = document.createTextNode(`Wrong logout! Has access to ${res.result.profile.name} profile!`)
+            document.body.appendChild(nameNode)
+        });
 
-    function tryingGetProfile(user, token) {
-        return fetch('https://apiv2.gbooking.ru/rpc', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                jsonrpc: "2.0",
-                id: requestCounter++,
-                cred: {user, token},
-                method: "profile.get_profile",
-                params: {
-                    id: user
-                }
+        function profile(user, token) {
+            return fetch('https://apiv2.gbooking.ru/rpc', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    jsonrpc: "2.0",
+                    id: requestCounter++,
+                    cred: {user, token},
+                    method: "profile.get_profile",
+                    params: {
+                        id: user
+                    }
+                })
             })
-        })
-            // Parse the response as JSON
-            .then(res => res.json())
-            .then(res => {
-                if (!res.result) {
-                    const errNode = document.createTextNode('Success logout! Profile is not available.');
-                    return document.body.appendChild(errNode);
-                }
-
-                const nameNode = document.createTextNode(`Wrong logout! Has access to ${res.result.profile.name} profile!`)
-                document.body.appendChild(nameNode)
-            });
-    }
+                // Parse the response as JSON
+                .then(res => res.json())
+        }
 </script>
 </html>
