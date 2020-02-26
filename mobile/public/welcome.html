@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Hello</title>
+</head>
+<body>
+
+<script>
+    // Запрос на api приложения.
+    // Поскольку на тот же самый домен, то кука с sid передастся.
+
+    fetch('https://gbooking.local/me', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+        // Parse the response as JSON
+        .then(res => res.json())
+        .then(res => {
+            // Write "Welcome <user name>" to the documents body
+            const nameNode = document.createTextNode(`Welcome, ${res.name}`);
+            document.body.appendChild(nameNode);
+        })
+
+</script>
+
+</body>
+</html>

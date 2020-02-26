@@ -17,12 +17,19 @@
 
     let requestCounter = 1;
 
-    function authorize() {
-        // We can get the token from the "code" query
-        // param, available in the browsers "location" global
-        const query = window.location.search.substring(1)
-        const code = query.split('code=')[1]
+    // We can get the token from the "code" query
+    // param, available in the browsers "location" global
+    const query = window.location.search.substring(1)
+    const code = query.split('code=')[1]
 
+    authorize(code)
+        .then(res => {
+            // Write "Welcome <user name>" to the documents body
+            const nameNode = document.createTextNode(`Welcome, ${res.result.profile.name}`);
+            document.body.appendChild(nameNode);
+        });
+
+    function authorize(code) {
         const waitUntilRedirect = new Promise(() => {});
 
         // Call exchange token phase when "code" query is passed.
@@ -77,13 +84,6 @@
                 return null;
             });
     }
-
-    authorize()
-        .then(res => {
-            // Write "Welcome <user name>" to the documents body
-            const nameNode = document.createTextNode(`Welcome, ${res.result.profile.name}`);
-            document.body.appendChild(nameNode);
-        });
 
     function exchangeToken(code) {
         return fetch('https://oauthv2.gbooking.ru/exchange', {
