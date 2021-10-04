@@ -24,7 +24,7 @@
 
     authorize(code)
         .then(res => {
-            // Write "Welcome <user name>" to the documents body
+            // Write "Welcome user_name" to the documents body
             const nameNode = document.createTextNode(`Welcome, ${res.result.profile.name}`);
             document.body.appendChild(nameNode);
         });
